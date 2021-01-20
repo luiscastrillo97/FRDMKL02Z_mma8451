@@ -1,7 +1,14 @@
-/**
- * @file    FRDM_KL02Z_mma_8451.c
- * @brief   Luis José Castrillo Fernández.
- */
+/*! @file : main.c
+ * @author  Luis José Castrillo Fernández
+ * @version 1.0.0
+ * @date    16/01/2021
+ * @brief   Archivo principal
+ * @details
+ *
+*/
+/*******************************************************************************
+ * Includes
+ ******************************************************************************/
 #include <stdio.h>
 #include "board.h"
 #include "peripherals.h"
@@ -9,14 +16,39 @@
 #include "clock_config.h"
 #include "MKL02Z4.h"
 #include "fsl_debug_console.h"
-/* TODO: insert other include files here. */
 
-/* TODO: insert other definitions and declarations here. */
 
-/*
- * @brief   Application entry point.
- */
+#include "sdk_hal_gpio.h"
+/*******************************************************************************
+ * Definitions
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * Private Prototypes
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * External vars
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * Local vars
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * Private Source Code
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * Public Source Code
+ ******************************************************************************/
 int main(void) {
+	status_t resultado;
 
   	/* Init board hardware. */
     BOARD_InitBootPins();
@@ -28,6 +60,14 @@ int main(void) {
 #endif
 
     PRINTF("Hello World\n");
+
+    //coloca el pin PTB7 en alto
+    resultado=gpioPutLow(KPTB10);
+    gpioPutValue(KPTB6,0);
+
+    if(resultado!=kStatus_Success)
+    	printf("error de operacion");
+
 
     /* Force the counter to be placed into memory. */
     volatile static int i = 0 ;
