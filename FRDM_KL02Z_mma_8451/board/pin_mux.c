@@ -31,7 +31,9 @@ board: FRDM-KL02Z
 void BOARD_InitBootPins(void)
 {
     BOARD_InitPins();
-    LEDs_InitPins();
+    BOARD_LedPins();
+    BOARD_I2CPins();
+    BOARD_mma8451Pins();
 }
 
 /* clang-format off */
@@ -77,7 +79,7 @@ void BOARD_InitPins(void)
 /* clang-format off */
 /*
  * TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
-LEDs_InitPins:
+BOARD_LedPins:
 - options: {callFromInitBoot: 'true', coreID: core0, enableClock: 'true'}
 - pin_list:
   - {pin_num: '13', peripheral: GPIOB, signal: 'GPIO, 10', pin_signal: ADC0_SE9/PTB10/TPM0_CH1, direction: OUTPUT, gpio_init_state: 'true', pull_select: up, pull_enable: disable}
@@ -90,11 +92,11 @@ LEDs_InitPins:
 
 /* FUNCTION ************************************************************************************************************
  *
- * Function Name : LEDs_InitPins
+ * Function Name : BOARD_LedPins
  * Description   : Configures pin routing and optionally pin electrical features.
  *
  * END ****************************************************************************************************************/
-void LEDs_InitPins(void)
+void BOARD_LedPins(void)
 {
     /* Port B Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortB);
@@ -104,21 +106,21 @@ void LEDs_InitPins(void)
         .outputLogic = 1U
     };
     /* Initialize GPIO functionality on pin PTB6 (pin 1)  */
-    GPIO_PinInit(LEDS_INITPINS_LED_RED_GPIO, LEDS_INITPINS_LED_RED_PIN, &LED_RED_config);
+    GPIO_PinInit(BOARD_LEDPINS_LED_RED_GPIO, BOARD_LEDPINS_LED_RED_PIN, &LED_RED_config);
 
     gpio_pin_config_t LED_GREEN_config = {
         .pinDirection = kGPIO_DigitalOutput,
         .outputLogic = 1U
     };
     /* Initialize GPIO functionality on pin PTB7 (pin 2)  */
-    GPIO_PinInit(LEDS_INITPINS_LED_GREEN_GPIO, LEDS_INITPINS_LED_GREEN_PIN, &LED_GREEN_config);
+    GPIO_PinInit(BOARD_LEDPINS_LED_GREEN_GPIO, BOARD_LEDPINS_LED_GREEN_PIN, &LED_GREEN_config);
 
     gpio_pin_config_t LED_BLUE_config = {
         .pinDirection = kGPIO_DigitalOutput,
         .outputLogic = 1U
     };
     /* Initialize GPIO functionality on pin PTB10 (pin 13)  */
-    GPIO_PinInit(LEDS_INITPINS_LED_BLUE_GPIO, LEDS_INITPINS_LED_BLUE_PIN, &LED_BLUE_config);
+    GPIO_PinInit(BOARD_LEDPINS_LED_BLUE_GPIO, BOARD_LEDPINS_LED_BLUE_PIN, &LED_BLUE_config);
 
     const port_pin_config_t LED_BLUE = {/* Internal pull-up/down resistor is disabled */
                                         kPORT_PullDisable,
@@ -129,7 +131,7 @@ void LEDs_InitPins(void)
                                         /* Pin is configured as PTB10 */
                                         kPORT_MuxAsGpio};
     /* PORTB10 (pin 13) is configured as PTB10 */
-    PORT_SetPinConfig(LEDS_INITPINS_LED_BLUE_PORT, LEDS_INITPINS_LED_BLUE_PIN, &LED_BLUE);
+    PORT_SetPinConfig(BOARD_LEDPINS_LED_BLUE_PORT, BOARD_LEDPINS_LED_BLUE_PIN, &LED_BLUE);
 
     const port_pin_config_t LED_RED = {/* Internal pull-up/down resistor is disabled */
                                        kPORT_PullDisable,
@@ -140,7 +142,7 @@ void LEDs_InitPins(void)
                                        /* Pin is configured as PTB6 */
                                        kPORT_MuxAsGpio};
     /* PORTB6 (pin 1) is configured as PTB6 */
-    PORT_SetPinConfig(LEDS_INITPINS_LED_RED_PORT, LEDS_INITPINS_LED_RED_PIN, &LED_RED);
+    PORT_SetPinConfig(BOARD_LEDPINS_LED_RED_PORT, BOARD_LEDPINS_LED_RED_PIN, &LED_RED);
 
     const port_pin_config_t LED_GREEN = {/* Internal pull-up/down resistor is disabled */
                                          kPORT_PullDisable,
@@ -151,7 +153,78 @@ void LEDs_InitPins(void)
                                          /* Pin is configured as PTB7 */
                                          kPORT_MuxAsGpio};
     /* PORTB7 (pin 2) is configured as PTB7 */
-    PORT_SetPinConfig(LEDS_INITPINS_LED_GREEN_PORT, LEDS_INITPINS_LED_GREEN_PIN, &LED_GREEN);
+    PORT_SetPinConfig(BOARD_LEDPINS_LED_GREEN_PORT, BOARD_LEDPINS_LED_GREEN_PIN, &LED_GREEN);
+}
+
+/* clang-format off */
+/*
+ * TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+BOARD_I2CPins:
+- options: {callFromInitBoot: 'true', coreID: core0, enableClock: 'true'}
+- pin_list:
+  - {pin_num: '23', peripheral: I2C0, signal: SCL, pin_signal: PTB3/IRQ_10/I2C0_SCL/UART0_TX}
+  - {pin_num: '24', peripheral: I2C0, signal: SDA, pin_signal: PTB4/IRQ_11/I2C0_SDA/UART0_RX}
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
+ */
+/* clang-format on */
+
+/* FUNCTION ************************************************************************************************************
+ *
+ * Function Name : BOARD_I2CPins
+ * Description   : Configures pin routing and optionally pin electrical features.
+ *
+ * END ****************************************************************************************************************/
+void BOARD_I2CPins(void)
+{
+    /* Port B Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortB);
+
+    /* PORTB3 (pin 23) is configured as I2C0_SCL */
+    PORT_SetPinMux(BOARD_I2CPINS_ACCEL_SCL_PORT, BOARD_I2CPINS_ACCEL_SCL_PIN, kPORT_MuxAlt2);
+
+    /* PORTB4 (pin 24) is configured as I2C0_SDA */
+    PORT_SetPinMux(BOARD_I2CPINS_ACCEL_SDA_PORT, BOARD_I2CPINS_ACCEL_SDA_PIN, kPORT_MuxAlt2);
+}
+
+/* clang-format off */
+/*
+ * TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+BOARD_mma8451Pins:
+- options: {callFromInitBoot: 'true', coreID: core0, enableClock: 'true'}
+- pin_list:
+  - {pin_num: '21', peripheral: GPIOA, signal: 'GPIO, 10', pin_signal: PTA10/IRQ_8, direction: INPUT, pull_select: up, pull_enable: enable}
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
+ */
+/* clang-format on */
+
+/* FUNCTION ************************************************************************************************************
+ *
+ * Function Name : BOARD_mma8451Pins
+ * Description   : Configures pin routing and optionally pin electrical features.
+ *
+ * END ****************************************************************************************************************/
+void BOARD_mma8451Pins(void)
+{
+    /* Port A Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortA);
+
+    gpio_pin_config_t ACCEL_IRQ_8_config = {
+        .pinDirection = kGPIO_DigitalInput,
+        .outputLogic = 0U
+    };
+    /* Initialize GPIO functionality on pin PTA10 (pin 21)  */
+    GPIO_PinInit(BOARD_MMA8451PINS_ACCEL_IRQ_8_GPIO, BOARD_MMA8451PINS_ACCEL_IRQ_8_PIN, &ACCEL_IRQ_8_config);
+
+    const port_pin_config_t ACCEL_IRQ_8 = {/* Internal pull-up resistor is enabled */
+                                           kPORT_PullUp,
+                                           /* Passive filter is disabled */
+                                           kPORT_PassiveFilterDisable,
+                                           /* Low drive strength is configured */
+                                           kPORT_LowDriveStrength,
+                                           /* Pin is configured as PTA10 */
+                                           kPORT_MuxAsGpio};
+    /* PORTA10 (pin 21) is configured as PTA10 */
+    PORT_SetPinConfig(BOARD_MMA8451PINS_ACCEL_IRQ_8_PORT, BOARD_MMA8451PINS_ACCEL_IRQ_8_PIN, &ACCEL_IRQ_8);
 }
 /***********************************************************************************************************************
  * EOF
