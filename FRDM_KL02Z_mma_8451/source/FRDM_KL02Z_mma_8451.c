@@ -1,7 +1,7 @@
 /*! @file : main.c
  * @author  Luis José Castrillo Fernández
  * @version 1.0.0
- * @date    16/01/2021
+ * @date    22/01/2021
  * @brief   Archivo principal
  * @details
  *
@@ -24,13 +24,13 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#define MMA851_I2C_DEVICE_ADDRESS	0x1D
-const uint16_t kSENSITIVITY_2G = 4096;
+#define MMA851_I2C_DEVICE_ADDRESS	0x1D	//Dirección del acelerómetro MMA8451
+const uint16_t k_SENSITIVITY_2G = 4096;		//Sensibilidad del acelerómetro para el rango de +- 2g.
 
 /*******************************************************************************
  * Private Prototypes
  ******************************************************************************/
-void calibracion();
+void calibrarAcelerometro();	//Prototipo de la función de calibración del acelerómetro.
 
 /*******************************************************************************
  * External vars
@@ -51,11 +51,12 @@ void calibracion();
  * Public Source Code
  ******************************************************************************/
 int main(void) {
+
+	/*Variables del proyecto*/
 	status_t status;
 	uint8_t nuevo_byte_uart;
-	uint8_t	nuevo_dato_i2c, datox1, datox2, datoy1, datoy2, datoz1, datoz2, nuevo_dato;
-	uint16_t xData = 0, yData = 0, zData = 0;
-	uint16_t xDatag = 0, yDatag = 0, zDatag = 0;
+	uint8_t	nuevo_dato_i2c, nuevo_dato, dato_x_msb, dato_x_lsb, dato_y_msb, dato_y_lsb, dato_z_msb, dato_z_lsb;
+	uint16_t dato_x_14_bits, dato_y_14_bits, dato_z_14_bits, dato_x_grados, dato_y_grados, dato_z_grados;
 
 
   	/* Init board hardware. */
@@ -67,19 +68,23 @@ int main(void) {
     BOARD_InitDebugConsole();
 #endif
 
+    /*Iniciaizar el puerto UART0 y el bus I2C0*/
     (void)uart0Inicializar(115200);	//115200bps
     (void)i2c0MasterInit(100000);	//100kbps
-    //
 
+    //Valores a digitar para obtener información o realizar una acción
     printf("Usar teclado para controlar LEDs y mostrar valores del acelerometro MMA8451\r\n");
     printf("R: Encender. r: Apagar. Led Rojo\r\n");
     printf("V: Encender. v: Apagar. Led Verde\r\n");
     printf("A: Encender. a: Apagar. Led Azul\r\n");
-    printf("M: buscar acelerometro\r\n");
-    printf("c: Calibrar acelerometro\r\n");
-    printf("T: Cambiar a modo Activo\r\n");
-    printf("t: Cambiar a modo StandBy\r\n");
-    printf("s: Verificar en que modo se encuentra el acelerometro\r\n");
+    printf("M: Encender. m: Apagar. Color Magenta\r\n");
+    printf("C: Encender. c: Apagar. Color Cyan\r\n");
+    printf("L: Encender. l: Apagar. Color Amarillo\r\n");
+    printf("b: buscar acelerometro\r\n");
+    printf("n: Calibrar acelerometro\r\n");
+    printf("o: Cambiar a modo Activo\r\n");
+    printf("f: Cambiar a modo StandBy\r\n");
+    printf("e: Verificar en que modo se encuentra el acelerometro\r\n");
     printf("x o X: Mostrar valores del eje x\r\n");
     printf("y o Y: Mostrar valores del eje y\r\n");
     printf("z o Z: Mostrar valores del eje z\r\n");
@@ -87,38 +92,88 @@ int main(void) {
 
     while(1) {
 
+    	//Verificar si el Buffer contiene datos para mostrar
     	if(uart0CuantosDatosHayEnBuffer()>0){
 
+    		//Leer los datos del Buffer
     		status=uart0LeerByteDesdeBuffer(&nuevo_byte_uart);
 
     		if(status==kStatus_Success){
 
     			printf("dato:%c\r\n",nuevo_byte_uart);
 
+    			/*Selector para determinar que acción realizar.*/
     			switch (nuevo_byte_uart) {
 
-				case 'a':
-					gpioPutHigh(KPTB10);
-					break;
-				case 'A':
+    			//Encender LED Azul
+    			case 'A':
 					gpioPutLow(KPTB10);
 					break;
 
+				//Apagar LED Azul
+    			case 'a':
+					gpioPutHigh(KPTB10);
+					break;
+
+				//Encender LED Verde
+    			case 'V':
+					gpioPutLow(KPTB7);
+					break;
+				//Apagar LED Verde
 				case 'v':
 					gpioPutHigh(KPTB7);
 					break;
-				case 'V':
-					gpioPutLow(KPTB7);
-					break;
 
-				case 'r':
-					gpioPutValue(KPTB6,1);
-					break;
+				//Encender LED Rojo
 				case 'R':
 					gpioPutValue(KPTB6,0);
 					break;
+				//Apagar LED Rojo
+				case 'r':
+					gpioPutValue(KPTB6,1);
+					break;
 
+				//Encender color Magenta
 				case 'M':
+					gpioPutValue(KPTB6,0);
+					gpioPutValue(KPTB7,1);
+					gpioPutValue(KPTB10,0);
+					break;
+				//Apagar color Magenta
+				case 'm':
+					gpioPutValue(KPTB6,1);
+					gpioPutValue(KPTB7,1);
+					gpioPutValue(KPTB10,1);
+					break;
+
+				//Encender color Amarillo
+				case 'L':
+					gpioPutValue(KPTB6,0);
+					gpioPutValue(KPTB7,0);
+					gpioPutValue(KPTB10,1);
+					break;
+				//Apagar color Amarillo
+				case 'l':
+					gpioPutValue(KPTB6,1);
+					gpioPutValue(KPTB7,1);
+					gpioPutValue(KPTB10,1);
+					break;
+
+				//Encender color Cyan
+				case 'C':
+					gpioPutValue(KPTB6,1);
+					gpioPutValue(KPTB7,0);
+					gpioPutValue(KPTB10,0);
+					break;
+				//Apagar color Cyan
+				case 'c':
+					gpioPutValue(KPTB6,1);
+					gpioPutValue(KPTB7,1);
+					gpioPutValue(KPTB10,1);
+					break;
+
+				//Comprobar si hay conexión con el acelerómetro
+				case 'b':
 					i2c0MasterReadByte(&nuevo_dato_i2c, MMA851_I2C_DEVICE_ADDRESS, WHO_AM_I);
 					if(nuevo_dato_i2c==0x1A)
 						printf("MMA8451 encontrado!!\r\n");
@@ -127,7 +182,8 @@ int main(void) {
 
 					break;
 
-				case 's':
+				//Comprobar estado del acelerómetro (StandBy o Active)
+				case 'e':
 					i2c0MasterReadByte(&nuevo_dato, MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1);
 					if(nuevo_dato==0x01){
 						printf("MMA8451 Active\r\n");
@@ -137,47 +193,51 @@ int main(void) {
 					}
 					break;
 
-				//Modo Activo
-				case 'T':
+				//Colocar el acelerómetro en Modo Activo
+				case 'o':
 					i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x01);
 					break;
-				//Modo Standby
-				case 't':
+				//Colocar el acelerómetro en Modo Standby
+				case 'f':
 					i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x00);
 					break;
 
+				//Extraer los valores del eje x del acelerómetro
 				case 'x':
 				case 'X':
-					i2c0MasterReadByte(&datox1, MMA851_I2C_DEVICE_ADDRESS, OUT_X_MSB);
-					i2c0MasterReadByte(&datox2, MMA851_I2C_DEVICE_ADDRESS, OUT_X_LSB);
-					xData  = (uint16_t)(datox1 << 6 | datox2 >> 2);
-					xDatag = (xData*90)/kSENSITIVITY_2G;
-					printf("%i Cuentas",xData);
-					printf("\t%i Grados\r\n",xDatag);
+					i2c0MasterReadByte(&dato_x_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_X_MSB);
+					i2c0MasterReadByte(&dato_x_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_X_LSB);
+					dato_x_14_bits  = (uint16_t)(dato_x_msb << 6 | dato_x_lsb >> 2);
+					dato_x_grados = (dato_x_14_bits*90)/k_SENSITIVITY_2G;
+					printf("%i Cuentas",dato_x_14_bits);
+					printf("\t%i Grados\r\n",dato_x_grados);
 					break;
 
+				//Extraer los valores del eje y del acelerómetro
 				case 'y':
 				case 'Y':
-					i2c0MasterReadByte(&datoy1, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_MSB);
-					i2c0MasterReadByte(&datoy2, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_LSB);
-					yData  = (uint16_t)(datoy1 << 6 | datoy2 >> 2);
-					yDatag = (yData*90)/kSENSITIVITY_2G;
-					printf("%i Cuentas",yData);
-					printf("\t%i Grados\r\n",yDatag);
+					i2c0MasterReadByte(&dato_y_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_MSB);
+					i2c0MasterReadByte(&dato_y_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_LSB);
+					dato_y_14_bits  = (uint16_t)(dato_y_msb << 6 | dato_y_lsb >> 2);
+					dato_y_grados = (dato_y_14_bits*90)/k_SENSITIVITY_2G;
+					printf("%i Cuentas",dato_y_14_bits);
+					printf("\t%i Grados\r\n",dato_y_grados);
 					break;
 
+				//Extraer los valores del eje z del acelerómetro
 				case 'z':
 				case 'Z':
-					i2c0MasterReadByte(&datoz1, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_MSB);
-					i2c0MasterReadByte(&datoz2, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_LSB);
-					zData  = (uint16_t)(datoz1 << 6 | datoz2 >> 2);
-					zDatag = (zData*90)/kSENSITIVITY_2G;
-					printf("%i Cuentas",zData);
-					printf("\t%i Grados\r\n",zDatag);
+					i2c0MasterReadByte(&dato_z_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_MSB);
+					i2c0MasterReadByte(&dato_z_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_LSB);
+					dato_z_14_bits  = (uint16_t)(dato_z_msb << 6 | dato_z_lsb >> 2);
+					dato_z_grados = (dato_z_14_bits*90)/k_SENSITIVITY_2G;
+					printf("%i Cuentas",dato_z_14_bits);
+					printf("\t%i Grados\r\n",dato_z_grados);
 					break;
 
-				case 'c':
-					calibracion();
+				//Calibrar el acelerómetro (reescribir el offset)
+				case 'n':
+					calibrarAcelerometro();
 					break;
 				}
     		}else{
@@ -189,33 +249,37 @@ int main(void) {
     return 0 ;
 }
 
-void calibracion(){
-	uint8_t datox1, datox2, datoy1, datoy2, datoz1, datoz2;
-	uint16_t Xout, Yout, Zout, Xoffset, Yoffset, Zoffset;
+/*Función para calibrar el acelerómetro en el rango de +-2g*/
+void calibrarAcelerometro(){
 
+	/*Variables de la función*/
+	uint8_t dato_x_msb, dato_x_lsb, dato_y_msb, dato_y_lsb, dato_z_msb, dato_z_lsb;
+	uint16_t dato_x_14_bits, dato_y_14_bits, dato_z_14_bits, dato_x_offset, dato_y_offset, dato_z_offset;
 
-	i2c0MasterReadByte(&datox1, MMA851_I2C_DEVICE_ADDRESS, OUT_X_MSB);
-	i2c0MasterReadByte(&datox2, MMA851_I2C_DEVICE_ADDRESS, OUT_X_LSB);
-	i2c0MasterReadByte(&datoy1, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_MSB);
-	i2c0MasterReadByte(&datoy2, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_LSB);
-	i2c0MasterReadByte(&datoz1, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_MSB);
-	i2c0MasterReadByte(&datoz2, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_LSB);
+	/*Extraer los valores de los ejes x, y, z del acelerómetro*/
+	i2c0MasterReadByte(&dato_x_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_X_MSB);
+	i2c0MasterReadByte(&dato_x_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_X_LSB);
+	i2c0MasterReadByte(&dato_y_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_MSB);
+	i2c0MasterReadByte(&dato_y_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_Y_LSB);
+	i2c0MasterReadByte(&dato_z_msb, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_MSB);
+	i2c0MasterReadByte(&dato_z_lsb, MMA851_I2C_DEVICE_ADDRESS, OUT_Z_LSB);
 
-	Xout = (uint16_t)(datox1 << 6 | datox2 >> 2);           // Compute 14-bit X-axis output value
-	Yout = (uint16_t)(datoy1 << 6 | datoy2 >> 2);           // Compute 14-bit Y-axis output value
-	Zout = (uint16_t)(datoz1 << 6 | datoz2 >> 2);           // Compute 14-bit Z-axis output value
+	dato_x_14_bits = (uint16_t)(dato_x_msb << 6 | dato_x_lsb >> 2);           // Calcula el valor del eje x en una variable de 16 bits
+	dato_y_14_bits = (uint16_t)(dato_y_msb << 6 | dato_y_lsb >> 2);           // Calcula el valor del eje y en una variable de 16 bits
+	dato_z_14_bits = (uint16_t)(dato_z_msb << 6 | dato_z_lsb >> 2);           // Calcula el valor del eje z en una variable de 16 bits
 
-	Xoffset = (Xout/8)*(-1);        // Compute X-axis offset correction value
-	Yoffset = (Yout/8)*(-1);        // Compute Y-axis offset correction value
-	Zoffset = (Zout-kSENSITIVITY_2G)/8*(-1);          // Compute Z-axis offset correction value
+	dato_x_offset = (dato_x_14_bits/8)*(-1);        // Calcula el valor del offset del eje x
+	dato_y_offset = (dato_y_14_bits/8)*(-1);        // Calcula el valor del offset del eje x
+	dato_z_offset = (dato_z_14_bits-k_SENSITIVITY_2G)/8*(-1);          // Calcula el valor del offset del eje x
 
-	// Standby mode to allow writing to the offset registers
-
+	// Colocar el acelerómetro en Standby mode para que permita registrar los nuevos valores del offset
 	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x00);
 
-	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_X, Xoffset);
-	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_Y, Yoffset);
-	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_Z, Zoffset);
+	//Escribir valores de offset de cada eje
+	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_X, dato_x_offset);
+	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_Y, dato_y_offset);
+	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, OFF_Z, dato_z_offset);
 
-	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x01); //Set Active mode
+	//Volver al Active mode
+	i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x01);
 }
