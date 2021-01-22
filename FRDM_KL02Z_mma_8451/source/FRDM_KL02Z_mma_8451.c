@@ -68,7 +68,7 @@ int main(void) {
     BOARD_InitDebugConsole();
 #endif
 
-    /*Iniciaizar el puerto UART0 y el bus I2C0*/
+    /*Inicializar el puerto UART0 y el bus I2C0*/
     (void)uart0Inicializar(115200);	//115200bps
     (void)i2c0MasterInit(100000);	//100kbps
 

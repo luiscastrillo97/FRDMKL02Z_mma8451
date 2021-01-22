@@ -121,7 +121,7 @@ status_t i2c0MasterInit(uint32_t baud_rate);
  */
 status_t i2c0MasterReadByte(uint8_t *data, uint8_t device_address, int8_t memory_address);
 
-status_t i2c0MasterWriteByte(uint8_t I2C_MASTER_SLAVE_ADDR_7BIT, int8_t memory_address, uint8_t data);
+status_t i2c0MasterWriteByte(uint8_t device_address, int8_t memory_address, uint8_t data);
 
 
 
