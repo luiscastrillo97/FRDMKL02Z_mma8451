@@ -7,6 +7,6 @@
 /FreeRTOS_TAD_logs/
 
 #Excluir carpetas temporales
-/FRDM_KL02Z_mma8451/debug/
-/FRDM_KL02Z_mma8451/release/
-/FRDM_KL02Z_mma8451/doc/
+/FRDM_KL02Z_mma_8451/debug/
+/FRDM_KL02Z_mma_8451/release/
+/FRDM_KL02Z_mma_8451/doc/
