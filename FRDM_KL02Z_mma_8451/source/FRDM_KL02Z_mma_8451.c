@@ -5,6 +5,7 @@
  * @brief   Archivo principal
  * @details
  *
+ *Probando como funciona un merge
 */
 /*******************************************************************************
  * Includes
