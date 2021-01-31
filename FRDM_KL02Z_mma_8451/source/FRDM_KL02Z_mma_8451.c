@@ -73,6 +73,11 @@ int main(void) {
     (void)uart0Inicializar(115200);	//115200bps
     (void)i2c0MasterInit(100000);	//100kbps
 
+    //Inicializando el acelerómetro en el rango de +-2g donde 1g = 4096 cuentas
+    (void)i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x00);
+    (void)i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, XYZ_DATA_CFG, 0x00);
+    (void)i2c0MasterWriteByte(MMA851_I2C_DEVICE_ADDRESS, CTRL_REG1, 0x01);
+
     //Valores a digitar para obtener información o realizar una acción
     printf("Usar teclado para controlar LEDs y mostrar valores del acelerometro MMA8451\r\n");
     printf("R: Encender. r: Apagar. Led Rojo\r\n");
